@@ -72,7 +72,6 @@ pub fn decode_battery_packet(data: &[u8]) -> Result<f32, DecodeError> {
 
 pub fn decode_imu_packet(data: &[u8]) -> Result<(Rotation, Gravity), DecodeError> {
     let mut cur = Cursor::new(data);
-
     let rotation = Rotation {
         x: cur.read_i16::<LE>().map_err(|_| E)? as f32 / 180f32 * 0.01,
         y: cur.read_i16::<LE>().map_err(|_| E)? as f32 / 180f32 * 0.01,
@@ -94,19 +93,42 @@ pub fn decode_imu_packet(data: &[u8]) -> Result<(Rotation, Gravity), DecodeError
         cur.read_i16::<LE>().map_err(|_| E)? as f32 / 256f32,
     ];
 
+    let rc = [rotation.w, rotation.x, rotation.y, rotation.z];
+    let r = [rc[0], -rc[1], -rc[2], -rc[3]];
+    let p = [0.0, 0.0 ,0.0 , 9.8];
+    //let p = [0.0, gravity_raw[0],gravity_raw[1],gravity_raw[2]];
+
+    let hrp = [
+        (r[0]*p[0] - r[1]*p[1] - r[2]*p[2] - r[3]*p[3]),
+        (r[0]*p[1] + r[1]*p[0] + r[2]*p[3] - r[3]*p[2]),
+        (r[0]*p[2] - r[1]*p[3] + r[2]*p[0] + r[3]*p[1]),
+        (r[0]*p[3] + r[1]*p[2] - r[2]*p[1] + r[3]*p[0])
+        ];
+    let hfinal = [
+        (hrp[0]*rc[0] - hrp[1]*rc[1] - hrp[2]*rc[2] - hrp[3]*rc[3]),
+        (hrp[0]*rc[1] + hrp[1]*rc[0] + hrp[2]*rc[3] - hrp[3]*rc[2]),
+        (hrp[0]*rc[2] - hrp[1]*rc[3] + hrp[2]*rc[0] + hrp[3]*rc[1]),
+        (hrp[0]*rc[3] + hrp[1]*rc[2] - hrp[2]*rc[1] + hrp[3]*rc[0])
+    ];
+    let grav = Gravity {
+        x: gravity_raw[0] - hfinal[1] * -1.2,
+        y: gravity_raw[1] - hfinal[2] * -1.2,
+        z: gravity_raw[2] - hfinal[3] * 1.2,
+    };
     // let gravity = Gravity {
     //     x: gravity_raw[0] - gravity_accell[0],
     //     y: gravity_raw[1] - gravity_accell[1] * -1.0,
     //     z: gravity_raw[2] - gravity_accell[2],
     // };
 
-    let gravity = Gravity {
-        x: gravity_raw[0],
-        y: gravity_raw[1],
-        z: gravity_raw[2],
-    };
-
+    //let gravity = Gravity {
+    //    x: gravity_raw[0],
+    //    y: gravity_raw[1],
+    //    z: gravity_raw[2],
+    //};
+    //print!("\n{:?}",grav);
+    //print!("\n{:?}",gravity_accell);
     // print!("Accel: {gravity:?} | Raw: ({:06.2}, {:06.2}, {:06.2}) | Minus: ({:06.2}, {:06.2}, {:06.2}) | Rotation: ({:06.2}, {:06.2}, {:06.2}) | RQ: {rotation:?}\n", gravity_raw[0], gravity_raw[1], gravity_raw[2], gravity_accell[0], gravity_accell[1], gravity_accell[2], rotation_vec[0], rotation_vec[1], rotation_vec[2]);
 
-    Ok((rotation, gravity))
+    Ok((rotation, grav))
 }
