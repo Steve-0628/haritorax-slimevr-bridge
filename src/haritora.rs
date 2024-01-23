@@ -94,21 +94,20 @@ pub fn decode_imu_packet(data: &[u8]) -> Result<(Rotation, Gravity), DecodeError
     ];
 
     let rc = [rotation.w, rotation.x, rotation.y, rotation.z];
-    let r = [rc[0], -rc[1], -rc[2], -rc[3]];
-    let p = [0.0, 0.0 ,0.0 , 9.8];
+    let p = [0.0, 0.0, 0.0, 9.8];
     //let p = [0.0, gravity_raw[0],gravity_raw[1],gravity_raw[2]];
 
     let hrp = [
-        (r[0]*p[0] - r[1]*p[1] - r[2]*p[2] - r[3]*p[3]),
-        (r[0]*p[1] + r[1]*p[0] + r[2]*p[3] - r[3]*p[2]),
-        (r[0]*p[2] - r[1]*p[3] + r[2]*p[0] + r[3]*p[1]),
-        (r[0]*p[3] + r[1]*p[2] - r[2]*p[1] + r[3]*p[0])
-        ];
+        (rc[3] * p[3]),
+        (-rc[2] * p[3]),
+        (rc[1] * p[3]),
+        (rc[0] * p[3]),
+    ];
     let hfinal = [
-        (hrp[0]*rc[0] - hrp[1]*rc[1] - hrp[2]*rc[2] - hrp[3]*rc[3]),
-        (hrp[0]*rc[1] + hrp[1]*rc[0] + hrp[2]*rc[3] - hrp[3]*rc[2]),
-        (hrp[0]*rc[2] - hrp[1]*rc[3] + hrp[2]*rc[0] + hrp[3]*rc[1]),
-        (hrp[0]*rc[3] + hrp[1]*rc[2] - hrp[2]*rc[1] + hrp[3]*rc[0])
+        (hrp[0] * rc[0] - hrp[1] * rc[1] - hrp[2] * rc[2] - hrp[3] * rc[3]),
+        (hrp[0] * rc[1] + hrp[1] * rc[0] + hrp[2] * rc[3] - hrp[3] * rc[2]),
+        (hrp[0] * rc[2] - hrp[1] * rc[3] + hrp[2] * rc[0] + hrp[3] * rc[1]),
+        (hrp[0] * rc[3] + hrp[1] * rc[2] - hrp[2] * rc[1] + hrp[3] * rc[0]),
     ];
     let grav = Gravity {
         x: gravity_raw[0] - hfinal[1] * -1.2,
