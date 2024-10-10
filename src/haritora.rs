@@ -105,8 +105,8 @@ pub fn decode_imu_packet(data: &[u8]) -> Result<(Rotation, Gravity), DecodeError
         y: gravity_raw[1],
         z: gravity_raw[2],
     };
-
-    // print!("Accel: {gravity:?} | Raw: ({:06.2}, {:06.2}, {:06.2}) | Minus: ({:06.2}, {:06.2}, {:06.2}) | Rotation: ({:06.2}, {:06.2}, {:06.2}) | RQ: {rotation:?}\n", gravity_raw[0], gravity_raw[1], gravity_raw[2], gravity_accell[0], gravity_accell[1], gravity_accell[2], rotation_vec[0], rotation_vec[1], rotation_vec[2]);
+    let gravity = gravity.to_vector3(&rotation);
+    // println!("Accel: {gravity:?} | Raw: ({:06.2}, {:06.2}, {:06.2}) | Minus: ({:06.2}, {:06.2}, {:06.2}) | Rotation: ({:06.2}, {:06.2}, {:06.2}) | RQ: {rotation:?}", gravity_raw[0], gravity_raw[1], gravity_raw[2], gravity_accell[0], gravity_accell[1], gravity_accell[2], rotation_vec[0], rotation_vec[1], rotation_vec[2]);
 
     Ok((rotation, gravity))
 }
